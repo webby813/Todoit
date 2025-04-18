@@ -35,37 +35,46 @@ async function addTodo() {
     }
 }
 
-//Wait for the api
+//wait for the API
 async function loadTodos() {
+  const todosContainer = document.getElementById("todos-container");
+  todosContainer.innerHTML = '<p class="text-center">Loading...</p>';
+
+  const token = localStorage.getItem("auth_token");
+
   try {
-    const todosContainer = document.getElementById('todos-container');
-    todosContainer.innerHTML = '<p class="text-center">Loading...</p>';
-    
-    const todos = await fetchAuthenticatedData('todos');
-    
-    if (todos && todos.length > 0) {
-      let html = '';
-      todos.forEach(todo => {
-        html += `
-          <div class="card mb-3">
-            <div class="card-body">
-              <h5 class="card-title">${todo.title}</h5>
-              <p class="card-text">${todo.description || ''}</p>
-              <button class="btn btn-sm btn-outline-danger" onclick="deleteTodo(${todo.id})">Delete</button>
-            </div>
-          </div>
-        `;
-      });
-      todosContainer.innerHTML = html;
-    } else {
-      todosContainer.innerHTML = '<p class="text-center">No todos found. Create one!</p>';
+    const response = await fetch(api_base + 'all-todos', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    const raw = await response.json();
+    const todos = raw.data; // 👈 This is the correct todos array
+
+    if (!todos || todos.length === 0) {
+      todosContainer.innerHTML = '<p class="text-center">No todos yet. Add one!</p>';
+      return;
     }
+
+    todosContainer.innerHTML = todos.map(todo => `
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5 class="card-title">${todo.title}</h5>
+          <p class="card-text">${todo.description || ""}</p>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteTodo(${todo.id})">Delete</button>
+        </div>
+      </div>
+    `).join('');
   } catch (error) {
-    console.error('Failed to load todos:', error);
-    document.getElementById('todos-container').innerHTML = 
-      '<p class="text-center text-danger">Failed to load todos. Please try again later.</p>';
+    console.error("Failed to load todos:", error);
+    todosContainer.innerHTML = `<p class="text-center text-danger">Failed to load todos.</p>`;
   }
 }
+
+
 
 
 async function deleteTodo(id) {
