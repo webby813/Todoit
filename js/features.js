@@ -74,17 +74,33 @@ async function loadTodos() {
   }
 }
 
-
-
-
 async function deleteTodo(id) {
-    if (confirm('Are you sure you want to delete this todo?')) {
-      try {
-        await fetchAuthenticatedData(`todos/${id}`, 'DELETE');
-        loadTodos();
-      } catch (error) {
-        console.error('Failed to delete todo:', error);
-        alert('Failed to delete todo. Please try again.');
+  const token = localStorage.getItem("auth_token");
+
+  if (!confirm('Are you sure you want to delete this todo?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${api_base}todos/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
       }
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert("Todo deleted successfully");
+      loadTodos(); // Refresh the list
+    } else {
+      alert(data.error || "Failed to delete todo.");
     }
+
+  } catch (error) {
+    console.error('Failed to delete todo:', error);
+    alert('Failed to delete todo. Please try again.');
+  }
 }
